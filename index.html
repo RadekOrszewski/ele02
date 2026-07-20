@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ELE.02 — Archiwum wykładów</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,400..800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1b2430; --paper:#eef1f4; --card:#ffffff;
+    --steel:#7194a9; --steel-dark:#4d6b7d;
+    --volt:#e8a020; --done:#3f8f5f; --line:#d4dbe1; --err:#c0392b;
+    --mono:'IBM Plex Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Archivo',system-ui,sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;padding:2.5rem 1rem 4rem}
+  .wrap{max-width:880px;margin:0 auto}
+  header{margin-bottom:1.6rem}
+  .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--steel-dark);margin-bottom:.4rem}
+  h1{font-size:clamp(1.6rem,4vw,2.3rem);font-weight:800;font-stretch:80%;line-height:1.1}
+  h1 .kod{color:var(--steel-dark)}
+  .meta{display:flex;flex-wrap:wrap;gap:.4rem 1.5rem;margin-top:.9rem;font-family:var(--mono);font-size:.78rem;color:#51606e}
+  .meta b{color:var(--ink);font-weight:500}
+
+  .progress{margin:1.6rem 0 1rem;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:1rem 1.2rem}
+  .progress-top{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--mono);font-size:.8rem;margin-bottom:.7rem}
+  .progress-top b{font-size:1.05rem}
+  .wire{position:relative;height:6px;background:var(--line);border-radius:3px}
+  .wire-fill{position:absolute;inset:0 auto 0 0;width:0%;background:linear-gradient(90deg,var(--steel),var(--volt));border-radius:3px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+  .wire-fill::after{content:"";position:absolute;right:-5px;top:50%;transform:translateY(-50%);width:12px;height:12px;border-radius:50%;background:var(--volt);box-shadow:0 0 0 3px rgba(232,160,32,.25);opacity:0;transition:opacity .3s}
+  .progress.active .wire-fill::after{opacity:1}
+  .time-left{font-family:var(--mono);font-size:.72rem;color:#8a95a0;margin-top:.6rem}
+
+  /* sync bar */
+  .syncbar{display:flex;align-items:center;gap:.6rem;font-family:var(--mono);font-size:.72rem;color:#68747f;margin:0 .2rem 1.6rem;flex-wrap:wrap}
+  .dot{width:8px;height:8px;border-radius:50%;background:#b8c1c9;flex-shrink:0}
+  .dot.ok{background:var(--done)} .dot.err{background:var(--err)} .dot.busy{background:var(--volt)}
+  .syncbar button{font-family:var(--mono);font-size:.72rem;background:none;border:none;color:var(--steel-dark);text-decoration:underline;cursor:pointer}
+
+  details.module{background:var(--card);border:1px solid var(--line);border-radius:10px;margin-bottom:.9rem;overflow:hidden}
+  details.module[open]{padding-bottom:.4rem}
+  summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:.8rem;padding:.95rem 1.2rem}
+  summary::-webkit-details-marker{display:none}
+  summary:focus-visible{outline:3px solid var(--volt);outline-offset:-3px}
+  .chev{flex-shrink:0;width:9px;height:9px;border-right:2px solid var(--steel-dark);border-bottom:2px solid var(--steel-dark);transform:rotate(-45deg);transition:transform .2s}
+  details[open] .chev{transform:rotate(45deg)}
+  .mod-name{font-weight:700;font-size:.98rem;flex:1;min-width:0}
+  .mod-count{font-family:var(--mono);font-size:.75rem;color:#68747f;flex-shrink:0}
+  .mod-count.full{color:var(--done);font-weight:500}
+  .mod-wire{height:3px;background:var(--line);margin:0 1.2rem}
+  .mod-wire i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--steel),var(--volt));transition:width .4s}
+  .mod-note{font-size:.8rem;color:#68747f;font-style:italic;padding:.6rem 1.2rem 0}
+  .mod-resource{padding:.6rem 1.2rem 0}
+
+  .lecture{border-top:1px solid #eceff2;padding:1rem 1.2rem;display:grid;grid-template-columns:auto 1fr;gap:1rem;transition:background .2s}
+  .lecture:first-of-type{border-top:1px solid var(--line);margin-top:.6rem}
+  .lecture.watched{background:#f4faf6}
+  .lecture.watched .title{color:#5c6a63;text-decoration:line-through;text-decoration-thickness:1px;text-decoration-color:#9ab8a6}
+  .check{appearance:none;width:24px;height:24px;margin-top:.15rem;cursor:pointer;border:2px solid var(--steel);border-radius:6px;position:relative;flex-shrink:0;transition:all .15s}
+  .check:hover{border-color:var(--steel-dark)}
+  .check:focus-visible{outline:3px solid var(--volt);outline-offset:2px}
+  .check:checked{background:var(--done);border-color:var(--done)}
+  .check:checked::after{content:"";position:absolute;left:6px;top:2px;width:6px;height:12px;border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(42deg)}
+  .kod-badge{font-family:var(--mono);font-size:.72rem;color:var(--steel-dark);background:#e7eef2;border-radius:4px;padding:.15rem .45rem;display:inline-block;margin-bottom:.35rem}
+  .title{font-weight:600;font-size:.98rem;line-height:1.35;margin-bottom:.3rem}
+  .sub{font-size:.82rem;color:#5b6874;margin-bottom:.55rem;font-family:var(--mono)}
+  .links{display:flex;flex-wrap:wrap;gap:.5rem}
+  .btn{display:inline-flex;align-items:center;gap:.4rem;font-size:.82rem;font-weight:600;text-decoration:none;padding:.4rem .8rem;border-radius:6px;transition:all .15s}
+  .btn:focus-visible{outline:3px solid var(--volt);outline-offset:2px}
+  .btn-yt{background:var(--steel-dark);color:#fff}
+  .btn-yt:hover{background:#3a5462}
+  .btn-pdf{border:1.5px solid var(--line);color:var(--steel-dark);background:#fff}
+  .btn-pdf:hover{border-color:var(--steel)}
+  .dur{font-family:var(--mono);font-size:.75rem;color:#8a95a0;align-self:center}
+
+  /* sync settings dialog */
+  dialog{border:1px solid var(--line);border-radius:12px;padding:1.4rem;max-width:480px;width:92vw;font-family:'Archivo',sans-serif;color:var(--ink)}
+  dialog::backdrop{background:rgba(27,36,48,.45)}
+  dialog h2{font-size:1.05rem;margin-bottom:.8rem}
+  dialog p{font-size:.83rem;color:#51606e;line-height:1.5;margin-bottom:.8rem}
+  dialog label{display:block;font-family:var(--mono);font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--steel-dark);margin:.7rem 0 .25rem}
+  dialog input{width:100%;padding:.5rem .6rem;border:1.5px solid var(--line);border-radius:6px;font-family:var(--mono);font-size:.82rem}
+  dialog input:focus{outline:none;border-color:var(--steel)}
+  .dlg-actions{display:flex;gap:.6rem;margin-top:1.1rem;flex-wrap:wrap}
+  .dlg-actions .btn{cursor:pointer;border:none}
+  .btn-secondary{background:#e7eef2;color:var(--steel-dark)}
+  .dlg-msg{font-family:var(--mono);font-size:.72rem;margin-top:.6rem;min-height:1em}
+  .dlg-msg.err{color:var(--err)} .dlg-msg.ok{color:var(--done)}
+  dialog a{color:var(--steel-dark)}
+
+  footer{margin-top:2.5rem;font-family:var(--mono);font-size:.72rem;color:#8a95a0;display:flex;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
+  footer button{font-family:var(--mono);font-size:.72rem;background:none;border:none;color:var(--steel-dark);text-decoration:underline;cursor:pointer}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Elektryk · Szkoła dla Dorosłych · Archiwum wykładów</div>
+    <h1><span class="kod">ELE.02</span> Montaż, uruchamianie i&nbsp;konserwacja instalacji, maszyn i&nbsp;urządzeń elektrycznych</h1>
+    <div class="meta">
+      <span>Kurs: <b>15.02.2026 – 15.11.2026</b></span>
+      <span>Egzamin: <b>styczeń 2027</b></span>
+      <span>Deklaracje do: <b>10.09.2026</b></span>
+    </div>
+  </header>
+
+  <div class="progress" id="progress">
+    <div class="progress-top">
+      <span>Obejrzane</span>
+      <span><b id="doneCount">0</b> / <span id="totalCount">0</span></span>
+    </div>
+    <div class="wire"><div class="wire-fill" id="wireFill"></div></div>
+    <div class="time-left" id="timeLeft"></div>
+  </div>
+
+  <div class="syncbar">
+    <span class="dot" id="syncDot"></span>
+    <span id="syncStatus">Synchronizacja wyłączona — postęp tylko na tym urządzeniu</span>
+    <button id="syncSetupBtn">Ustawienia synchronizacji</button>
+    <button id="syncNowBtn" hidden>Synchronizuj teraz</button>
+  </div>
+
+  <div id="modules"></div>
+
+  <footer>
+    <span id="footNote">Stan zapisywany lokalnie w tej przeglądarce</span>
+    <button id="resetBtn">Wyczyść zaznaczenia</button>
+  </footer>
+</div>
+
+<dialog id="syncDlg">
+  <h2>Synchronizacja przez GitHub Gist</h2>
+  <p>Postęp będzie zapisywany w prywatnym (secret) giście na Twoim koncie GitHub i synchronizowany między urządzeniami. Potrzebny jest token z uprawnieniem <b>gist</b>: utwórz go na <a href="https://github.com/settings/tokens/new?scopes=gist&description=ELE.02+dashboard" target="_blank" rel="noopener">github.com/settings/tokens</a> (classic, zakres „gist"). Token zapisuje się wyłącznie w tej przeglądarce — na każdym urządzeniu wklej go raz.</p>
+  <label for="tokenInput">GitHub token</label>
+  <input id="tokenInput" type="password" autocomplete="off" placeholder="ghp_...">
+  <label for="gistInput">Gist ID <span style="text-transform:none">(zostaw puste przy pierwszej konfiguracji — utworzę gist automatycznie)</span></label>
+  <input id="gistInput" type="text" autocomplete="off" placeholder="np. a1b2c3d4e5f6...">
+  <div class="dlg-actions">
+    <button class="btn btn-yt" id="dlgSave">Połącz i synchronizuj</button>
+    <button class="btn btn-secondary" id="dlgClose">Anuluj</button>
+    <button class="btn btn-secondary" id="dlgDisconnect" hidden>Rozłącz</button>
+  </div>
+  <div class="dlg-msg" id="dlgMsg"></div>
+</dialog>
+
+<script>
+/* Aby dodać nowy wykład: dopisz obiekt do właściwego modułu.
+   Pola: id (unikalny, nie zmieniaj po zapisaniu), kod, title,
+   lecturer, date, duration (min), yt, pdfs [{label,url}] */
+const MODULES = [
+ {
+  "name": "Inauguracja kursu",
+  "tag": "START",
+  "lectures": [
+   {
+    "id": "inaug",
+    "kod": "INAUG",
+    "title": "Inauguracja online ELE.02 (cz. 1 Sprawy organizacyjne · cz. 2 od 32:03 Sprawy formalne i finansowe · cz. 3 od 49:28 Q&A)",
+    "lecturer": "Szkoła",
+    "date": "13.02.2026",
+    "yt": "https://youtu.be/FtdcVRr2dLY",
+    "pdfs": [
+     {
+      "label": "PDF cz. 1",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/02/ELE02_Inauguracja_czesc1__MB_13_02_2026.pdf"
+     },
+     {
+      "label": "PDF cz. 2",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/02/ELE02_Inauguracja_czesc2__AB_13_02_2026.pdf"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "name": "Podstawy elektrotechniki [WE, P-EL]",
+  "tag": "P-EL",
+  "lectures": [
+   {
+    "id": "we1",
+    "kod": "WE.1",
+    "title": "Wprowadzenie do elektrotechniki, część 1",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "17.02.2026",
+    "duration": 73,
+    "yt": "https://youtu.be/-LyfnkHQWFI",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/02/WE1__RC_17_02_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "we2",
+    "kod": "WE.2",
+    "title": "Wprowadzenie do elektrotechniki, część 2",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "23.02.2026",
+    "duration": 92,
+    "yt": "https://youtu.be/IrPbTimcRiM",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/02/WE2__RC_23_02_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "pel1",
+    "kod": "P-EL.1",
+    "title": "Podstawy elektrotechniki, część 1. Pomiary elektryczne",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "02.03.2026",
+    "duration": 90,
+    "yt": "https://youtu.be/v6ec_XyLFy8",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/03/PEL1__RC_02_03_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "pel2",
+    "kod": "P-EL.2",
+    "title": "Pomiary elektryczne – przyrządy pomiarowe",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "09.03.2026",
+    "duration": 83,
+    "yt": "https://youtu.be/ElzxZHLA09I",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/03/PEL2__RC_09_03_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "pel3",
+    "kod": "P-EL.3",
+    "title": "Prąd elektryczny. Prawo Ohma. Praca i moc prądu. Obwody jedno- i trójfazowe",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "16.03.2026",
+    "duration": 77,
+    "yt": "https://youtu.be/L8a4ex0uE7k",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/03/PEL3__RC_16_03_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "pel4",
+    "kod": "P-EL.4",
+    "title": "Elementy elektroniczne – binarne",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "23.03.2026",
+    "duration": 76,
+    "yt": "https://youtu.be/KaW_qL2avgY",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/03/PEL4__RC_23_03_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "pel5",
+    "kod": "P-EL.5",
+    "title": "Elementy elektroniczne cd.: transformatory sieciowe, bezpieczniki, warystory, termistory, diody, tranzystory, bramki logiczne, klucze",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "30.03.2026",
+    "duration": 76,
+    "yt": "https://youtu.be/Lmv7-B-M-a0",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/03/PEL5__RC_30_03_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "pel6",
+    "kod": "P-EL.6",
+    "title": "Elementy elektroniczne – fotoelementy. Programy CAD i obwody elektryczne",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "13.04.2026",
+    "duration": 77,
+    "yt": "https://youtu.be/Td_nFI0q1Bg",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/04/PEL6__RC_13_04_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "pel7",
+    "kod": "P-EL.7",
+    "title": "Pole magnetyczne",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "27.04.2026",
+    "duration": 75,
+    "yt": "https://youtu.be/8roJQXfe-js",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/04/PEL7__RC_27_04_2026.pdf"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "name": "Maszyny i urządzenia elektryczne [MiUE]",
+  "tag": "MiUE",
+  "lectures": [
+   {
+    "id": "miue1",
+    "kod": "MiUE.1",
+    "title": "Maszyny i urządzenia elektryczne. Urządzenia elektryczne, część 1",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "24.02.2026",
+    "duration": 101,
+    "yt": "https://youtu.be/l93jGbuznjU",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/02/MiU1__RC_24_02_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "miue2",
+    "kod": "MiUE.2",
+    "title": "Urządzenia cd.: przekaźniki bistabilne, wyłączniki nadprądowe, wyłączniki różnicowo-prądowe",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "03.03.2026",
+    "duration": 85,
+    "yt": "https://youtu.be/CEdikhCsR64",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/03/MiU2__RC_03_03_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "miue3",
+    "kod": "MiUE.3",
+    "title": "Przekaźniki specjalne, ograniczniki przepięć, liczniki, styczniki, wyłączniki silnikowe. Układy połączeń styczników",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "10.03.2026",
+    "duration": 87,
+    "yt": "https://youtu.be/OOHraIjbgU4",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/03/MiU3__RC_10_03_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "miue4",
+    "kod": "MiUE.4",
+    "title": "Sterowniki oświetlenia, przekaźniki, ograniczniki poboru mocy",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "17.03.2026",
+    "duration": 82,
+    "yt": "https://youtu.be/W7URBqMrfvg",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/03/MiU4__RC_17_03_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "miue5",
+    "kod": "MiUE.5",
+    "title": "Technika świetlna",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "24.03.2026",
+    "duration": 78,
+    "yt": "https://youtu.be/zOll_L8oLBk",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/03/MiU5__RC_24_03_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "miue6",
+    "kod": "MiUE.6",
+    "title": "Oświetlenie – wpływ na zdrowie. Oświetlenie awaryjne, uliczne i na obszarach kolejowych",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "31.03.2026",
+    "duration": 65,
+    "yt": "https://youtu.be/FPhuHGpmwq8",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/04/MiU6__RC_31_03_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "miue7",
+    "kod": "MiUE.7",
+    "title": "Pytania z egzaminu pisemnego, część 1",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "07.04.2026",
+    "duration": 95,
+    "yt": "https://youtu.be/A6PphtohmG8",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/04/MiU7__RC_07_04_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "miue8",
+    "kod": "MiUE.8",
+    "title": "Pytania z egzaminu pisemnego, część 2",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "14.04.2026",
+    "duration": 91,
+    "yt": "https://youtu.be/zrUY9TmGTq4",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/04/MiU8__RC_16_04_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "miue9",
+    "kod": "MiUE.9",
+    "title": "Pytania z egzaminu pisemnego, część 3",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "21.04.2026",
+    "duration": 80,
+    "yt": "https://youtu.be/yN59L95agHM",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/04/MiU9__RC_21_04_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "miue10",
+    "kod": "MiUE.10",
+    "title": "Maszyny elektryczne, część 1. Maszyny indukcyjne",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "04.05.2026",
+    "duration": 75,
+    "yt": "https://youtu.be/9oduJusbweg",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/05/MiU10__RC_04_05_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "miue11",
+    "kod": "MiUE.11",
+    "title": "Silniki indukcyjne",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "11.05.2026",
+    "duration": 76,
+    "yt": "https://youtu.be/I6RvQntkj4U",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/05/MiU11__RC_11_05_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "miue12",
+    "kod": "MiUE.12",
+    "title": "Uszkodzenia silników indukcyjnych. Maszyny prądu stałego",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "18.05.2026",
+    "duration": 79,
+    "yt": "https://youtu.be/DZAuyZl6-TE",
+    "pdfs": [
+     {
+      "label": "PDF Uszkodzenia",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/05/MiU12_1__RC_18_05_2026.pdf"
+     },
+     {
+      "label": "PDF Maszyny DC",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/05/MiU12_2__RC_18_05_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "miue13",
+    "kod": "MiUE.13",
+    "title": "Maszyny synchroniczne. Maszyny komutatorowe",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "25.05.2026",
+    "duration": 73,
+    "yt": "https://youtu.be/hyf90LatiBc",
+    "pdfs": [
+     {
+      "label": "PDF cz. 1",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/05/MiU13_1__RC_25_05_2026.pdf"
+     },
+     {
+      "label": "PDF cz. 2",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/05/MiU13_2__RC_25_05_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "miue14",
+    "kod": "MiUE.14",
+    "title": "Transformatory",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "01.06.2026",
+    "duration": 72,
+    "yt": "https://youtu.be/cfLDN0k4H9o",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/06/MiU14__RC_01_06_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "miue15",
+    "kod": "MiUE.15",
+    "title": "Elektrotermia – grzejnictwo elektryczne",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "08.06.2026",
+    "duration": 81,
+    "yt": "https://youtu.be/5nNniPBgPDs",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/06/MiU15__RC_08_06_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "miue16",
+    "kod": "MiUE.16",
+    "title": "Nagrzewanie promiennikowe, elektrodowe, łukowe",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "22.06.2026",
+    "duration": 75,
+    "yt": "https://youtu.be/Dh0TZp7fJrA",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/06/MiU16__RC_22_06_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "miue17",
+    "kod": "MiUE.17",
+    "title": "Nagrzewanie indukcyjne, pojemnościowe, mikrofalowe i plazmowe. Inne metody nagrzewania",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "29.06.2026",
+    "duration": 96,
+    "yt": "https://youtu.be/I0pfqqOzW2I",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/06/MiU17__RC_29_06_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "miue18",
+    "kod": "MiUE.18",
+    "title": "Pytania egzaminacyjne",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "06.07.2026",
+    "duration": 87,
+    "yt": "https://youtu.be/lFDV2BveHOY",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/07/MiU18__RC_06_07_2026.pdf"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "name": "Instalacje elektryczne [IE]",
+  "tag": "IE",
+  "lectures": [
+   {
+    "id": "ie1",
+    "kod": "IE.1",
+    "title": "Instalacje elektryczne – wprowadzenie",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "23.06.2026",
+    "duration": 90,
+    "yt": "https://youtu.be/al06b01rALk",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/06/IE1__RC_23_06_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "ie2",
+    "kod": "IE.2",
+    "title": "Instalacje mieszkaniowe. Dobór i układanie przewodów. Dokumentacja instalacji i urządzeń. Układy sieciowe",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "30.06.2026",
+    "duration": 97,
+    "yt": "https://youtu.be/53oDyHFLzo8",
+    "pdfs": [
+     {
+      "label": "PDF cz. 1",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/07/IE2_1__RC_30_06_2026.pdf"
+     },
+     {
+      "label": "PDF cz. 2",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/07/IE2_2__RC_30_06_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "ie3",
+    "kod": "IE.3",
+    "title": "Przewody ochronne. Układy uziemiające. Instalacje na budowie",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "07.07.2026",
+    "duration": 85,
+    "yt": "https://youtu.be/ivmJd78HbUA",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/07/IE3__RC_07_07_2026.pdf"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "name": "Bezpieczeństwo i higiena pracy [BHP]",
+  "tag": "BHP",
+  "lectures": [
+   {
+    "id": "bhp1",
+    "kod": "BHP.1",
+    "title": "Bezpieczeństwo i higiena pracy, część 1",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "26.05.2026",
+    "duration": 76,
+    "yt": "https://youtu.be/KqPoXsjsoNQ",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/05/BHP1__RC_26_05_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "bhp2",
+    "kod": "BHP.2",
+    "title": "Ergonomia. Zagrożenia w środowisku pracy. Ocena ryzyka. Wypadki i choroby zawodowe",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "02.06.2026",
+    "duration": 100,
+    "yt": "https://youtu.be/mRIutRDgYK8",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/06/BHP2__RC_02_06_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "bhp3",
+    "kod": "BHP.3",
+    "title": "Prace na wysokości. Kwalifikowana Pierwsza Pomoc",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "09.06.2026",
+    "duration": 85,
+    "yt": "https://youtu.be/GBg7E-dJI1M",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/06/BHP3__RC_09_06_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "bhp4",
+    "kod": "BHP.4",
+    "title": "Pierwsza Pomoc, część 2",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "16.06.2026",
+    "duration": 76,
+    "yt": "https://youtu.be/iyJAdsRksVc",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/06/BHP4__RC_16_06_2026.pdf"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "name": "Rysunek techniczny [RT]",
+  "tag": "RT",
+  "resource": {
+   "label": "Symbole graficzne elektryczne (PDF)",
+   "url": "https://viessmann.plus/wp-content/uploads/2022/10/Symbole_elektyryczne.pdf"
+  },
+  "lectures": [
+   {
+    "id": "rtel1",
+    "kod": "RT-el.1",
+    "title": "Rysunek techniczny – elektryczny, część 1",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "28.04.2026",
+    "duration": 81,
+    "yt": "https://youtu.be/DAwkKgIExcA",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/04/RTel1__RC_28_04_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "rtel2",
+    "kod": "RT-el.2",
+    "title": "Rodzaje rysunku elektrycznego. Czytanie schematów elektrycznych",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "05.05.2026",
+    "duration": 86,
+    "yt": "https://youtu.be/CMGBA4QIuYU",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/05/RTel2__RC_05_05_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "rtel3",
+    "kod": "RT-el.3",
+    "title": "Rysunek techniczny elektryczny, część 3",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "12.05.2026",
+    "duration": 87,
+    "yt": "https://youtu.be/0f4b4-dw8Pc",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/05/RTel3__RC_12_05_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "rt4",
+    "kod": "RT.4",
+    "title": "Rysunek techniczny maszynowy",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "19.05.2026",
+    "duration": 81,
+    "yt": "https://youtu.be/e7mIqrVUjEs",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/05/RT4__RC_19_05_2026.pdf"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "name": "Montaż instalacji, maszyn i urządzeń [M-EP]",
+  "tag": "M-EP",
+  "note": "Wykłady wprowadzające, szczególnie dla uczących się od podstaw",
+  "lectures": [
+   {
+    "id": "mep1",
+    "kod": "M-EP.1",
+    "title": "Podstawy instalacji elektrycznych – złączki, narzędzia i montaż obwodu oświetlenia",
+    "lecturer": "mgr inż. Zygfryd Kulig",
+    "date": "18.02.2026",
+    "duration": 132,
+    "yt": "https://youtu.be/7gR8askoYUg"
+   },
+   {
+    "id": "mep2",
+    "kod": "M-EP.2",
+    "title": "Podłączanie gniazda jednofazowego oraz pomiar prądu",
+    "lecturer": "mgr inż. Zygfryd Kulig",
+    "date": "25.02.2026",
+    "duration": 94,
+    "yt": "https://youtu.be/KVHZia4wiU0"
+   },
+   {
+    "id": "mep3",
+    "kod": "M-EP.3",
+    "title": "Podłączanie dwóch wyłączników różnicowoprądowych",
+    "lecturer": "mgr inż. Zygfryd Kulig",
+    "date": "04.03.2026",
+    "duration": 104,
+    "yt": "https://youtu.be/F7vn6IYogtU"
+   },
+   {
+    "id": "mep4",
+    "kod": "M-EP.4",
+    "title": "Wyłączniki różnicowoprądowe 1-fazowe i 3-fazowe – zasada działania",
+    "lecturer": "mgr inż. Zygfryd Kulig",
+    "date": "11.03.2026",
+    "duration": 77,
+    "yt": "https://youtu.be/Z1qjjJYVOAo"
+   },
+   {
+    "id": "mep5",
+    "kod": "M-EP.5",
+    "title": "Łączniki schodowe",
+    "lecturer": "mgr inż. Zygfryd Kulig",
+    "date": "18.03.2026",
+    "duration": 82,
+    "yt": "https://youtu.be/xdkoi-QpJ5c"
+   },
+   {
+    "id": "mep6",
+    "kod": "M-EP.6",
+    "title": "Sterowanie oświetleniem z trzech miejsc – łącznik krzyżowy",
+    "lecturer": "mgr inż. Zygfryd Kulig",
+    "date": "25.03.2026",
+    "duration": 90,
+    "yt": "https://youtu.be/Oz8I63U9aws"
+   },
+   {
+    "id": "mep7",
+    "kod": "M-EP.7",
+    "title": "Przekaźnik bistabilny – zasada działania i podłączenie",
+    "lecturer": "mgr inż. Robert Czak",
+    "date": "01.04.2026",
+    "duration": 86,
+    "yt": "https://youtu.be/FexHXDsMU4w"
+   },
+   {
+    "id": "mep8",
+    "kod": "M-EP.8",
+    "title": "Planowanie instalacji z przekaźnikiem bistabilnym BIS-402",
+    "lecturer": "mgr inż. Zygfryd Kulig",
+    "date": "08.04.2026",
+    "duration": 79,
+    "yt": "https://youtu.be/HDQzcHcneRQ"
+   },
+   {
+    "id": "mep9",
+    "kod": "M-EP.9",
+    "title": "Podłączanie automatu schodowego, zmierzchowego i czujnika ruchu",
+    "lecturer": "mgr inż. Zygfryd Kulig",
+    "date": "15.04.2026",
+    "duration": 86,
+    "yt": "https://youtu.be/6yxFFyaBbUc"
+   },
+   {
+    "id": "mep10",
+    "kod": "M-EP.10",
+    "title": "Gniazda i wtyczki CEE, podłączanie gniazda trójfazowego",
+    "lecturer": "mgr inż. Zygfryd Kulig",
+    "date": "22.04.2026",
+    "duration": 123,
+    "yt": "https://youtu.be/xEGL-7aPIOE"
+   },
+   {
+    "id": "mep11",
+    "kod": "M-EP.11",
+    "title": "Montaż obwodu stycznikowego z samopodtrzymaniem",
+    "lecturer": "mgr inż. Zygfryd Kulig",
+    "date": "29.04.2026",
+    "duration": 92,
+    "yt": "https://youtu.be/C-YRL74_UTw"
+   },
+   {
+    "id": "mep12",
+    "kod": "M-EP.12",
+    "title": "Montaż układu nawrotnego silnika indukcyjnego",
+    "lecturer": "mgr inż. Zygfryd Kulig",
+    "date": "06.05.2026",
+    "duration": 120,
+    "yt": "https://youtu.be/5t8d5NerDNo"
+   },
+   {
+    "id": "mep13",
+    "kod": "M-EP.13",
+    "title": "Podłączanie czujnika zaniku i asymetrii faz",
+    "lecturer": "mgr inż. Zygfryd Kulig",
+    "date": "13.05.2026",
+    "duration": 83,
+    "yt": "https://youtu.be/jdErpg6eWJA"
+   },
+   {
+    "id": "mep14",
+    "kod": "M-EP.14",
+    "title": "Przekaźniki elektromagnetyczne",
+    "lecturer": "mgr inż. Zygfryd Kulig",
+    "date": "20.05.2026",
+    "duration": 87,
+    "yt": "https://youtu.be/-k20MJLXUjU"
+   },
+   {
+    "id": "mep15",
+    "kod": "M-EP.15",
+    "title": "Przekaźniki czasowe",
+    "lecturer": "mgr inż. Zygfryd Kulig",
+    "date": "27.05.2026",
+    "duration": 90,
+    "yt": "https://youtu.be/0-QBUIIHBp4"
+   }
+  ]
+ },
+ {
+  "name": "Język angielski [GB] – dla zainteresowanych",
+  "tag": "GB",
+  "lectures": [
+   {
+    "id": "gb1",
+    "kod": "GB.1",
+    "title": "Bargaining in the Workplace: Strategies for Success",
+    "lecturer": "mgr Dariusz Sławek",
+    "date": "01.06.2026",
+    "duration": 57,
+    "yt": "https://youtu.be/tncK3x4VrmA",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://viessmann.plus/wp-content/uploads/2026/06/GB1__SD_01_06_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "gb2",
+    "kod": "GB.2",
+    "title": "Active Listening in the Workplace",
+    "lecturer": "mgr Dariusz Sławek",
+    "date": "08.06.2026",
+    "duration": 53,
+    "yt": "https://youtu.be/2qsD4ogCyEE",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://www.viessmann.edu.pl/wp-content/uploads/GB2__SD_08_06_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "gb3",
+    "kod": "GB.3",
+    "title": "Icebreakers in the Workplace",
+    "lecturer": "mgr Dariusz Sławek",
+    "date": "15.06.2026",
+    "duration": 47,
+    "yt": "https://youtu.be/KDIrPn_5tiY",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://www.viessmann.edu.pl/wp-content/uploads/GB3__SD_15_06_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "gb4",
+    "kod": "GB.4",
+    "title": "How to Write a Great CV",
+    "lecturer": "mgr Dariusz Sławek",
+    "date": "22.06.2026",
+    "duration": 45,
+    "yt": "https://youtu.be/3oXTVzUaFSU",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://www.viessmann.edu.pl/wp-content/uploads/GB4__SD_22_06_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "gb5",
+    "kod": "GB.5",
+    "title": "Professional Questioning & Clarifications",
+    "lecturer": "mgr Dariusz Sławek",
+    "date": "29.06.2026",
+    "duration": 50,
+    "yt": "https://youtu.be/tuq7HWDM4XI",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://www.viessmann.edu.pl/wp-content/uploads/GB5__SD_29_06_2026.pdf"
+     }
+    ]
+   },
+   {
+    "id": "gb6",
+    "kod": "GB.6",
+    "title": "Writing professional emails in English",
+    "lecturer": "mgr Dariusz Sławek",
+    "date": "13.07.2026",
+    "duration": 42,
+    "yt": "https://youtu.be/jyrCDZbuTFs",
+    "pdfs": [
+     {
+      "label": "PDF",
+      "url": "https://www.viessmann.edu.pl/wp-content/uploads/GB6__SD_13_07_2026.pdf"
+     }
+    ]
+   }
+  ]
+ }
+];
+
+/* ── stan lokalny ─────────────────────────────────────────────
+   watched: { lectureId: {w: true|false, t: epoch_ms} }
+   Znacznik czasu pozwala scalać stan z gista: wygrywa nowszy wpis,
+   więc odznaczenie na telefonie nie zostanie "wskrzeszone" przez laptop. */
+const KEY = "ele02-watched-v2";
+const CFG = "ele02-sync-cfg";
+const GIST_FILE = "ele02-progress.json";
+
+let watched = load(KEY) || migrate() || {};
+let cfg = load(CFG) || null;   // {token, gistId}
+const openState = {};
+let syncTimer = null, syncing = false, dirty = false;
+
+function load(k){ try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } }
+function persist(){ try { localStorage.setItem(KEY, JSON.stringify(watched)); } catch {} }
+function persistCfg(){ try { cfg ? localStorage.setItem(CFG, JSON.stringify(cfg)) : localStorage.removeItem(CFG); } catch {} }
+function migrate(){ /* stary format: {id:true} */
+  const old = load("ele02-watched");
+  if(!old) return null;
+  const t = Date.now(), out = {};
+  Object.keys(old).forEach(id => out[id] = {w:true, t});
+  return out;
+}
+const isWatched = id => !!(watched[id] && watched[id].w);
+
+/* ── merge: nowszy znacznik czasu wygrywa ── */
+function merge(remote){
+  let changed = false;
+  Object.entries(remote||{}).forEach(([id,e])=>{
+    if(!e || typeof e.t !== "number") return;
+    const loc = watched[id];
+    if(!loc || e.t > loc.t){ watched[id] = {w:!!e.w, t:e.t}; changed = true; }
+  });
+  return changed;
+}
+
+/* ── Gist API ── */
+const api = (path, opts={}) => fetch("https://api.github.com"+path, {
+  ...opts,
+  headers: {
+    "Accept":"application/vnd.github+json",
+    ...(cfg && cfg.token ? {"Authorization":"Bearer "+cfg.token} : {}),
+    ...(opts.body ? {"Content-Type":"application/json"} : {}),
+    ...(opts.headers||{})
+  }
+});
+
+async function pullRemote(){
+  const r = await api("/gists/"+cfg.gistId);
+  if(!r.ok) throw new Error("Odczyt gista: HTTP "+r.status);
+  const g = await r.json();
+  const f = g.files && g.files[GIST_FILE];
+  if(!f) return {};
+  try { return JSON.parse(f.truncated ? await (await fetch(f.raw_url)).text() : f.content); }
+  catch { return {}; }
+}
+async function pushRemote(){
+  const r = await api("/gists/"+cfg.gistId, {
+    method:"PATCH",
+    body: JSON.stringify({files:{[GIST_FILE]:{content: JSON.stringify(watched)}}})
+  });
+  if(!r.ok) throw new Error("Zapis gista: HTTP "+r.status);
+}
+async function createGist(){
+  const r = await api("/gists", {
+    method:"POST",
+    body: JSON.stringify({
+      description:"ELE.02 — postęp oglądania wykładów",
+      public:false,
+      files:{[GIST_FILE]:{content: JSON.stringify(watched)}}
+    })
+  });
+  if(!r.ok) throw new Error("Tworzenie gista: HTTP "+r.status);
+  return (await r.json()).id;
+}
+
+/* ── sync: pull → merge → push ── */
+async function syncNow(){
+  if(!cfg || syncing) { dirty = dirty || !!cfg; return; }
+  syncing = true;
+  setSyncUI("busy","Synchronizuję…");
+  try {
+    const remote = await pullRemote();
+    if(merge(remote)){ persist(); render(); }
+    await pushRemote();
+    dirty = false;
+    setSyncUI("ok","Zsynchronizowano · "+new Date().toLocaleTimeString("pl-PL",{hour:"2-digit",minute:"2-digit"}));
+  } catch(e){
+    setSyncUI("err","Błąd synchronizacji — postęp zapisany lokalnie. "+e.message);
+  } finally {
+    syncing = false;
+    if(dirty){ dirty=false; scheduleSync(); }
+  }
+}
+function scheduleSync(){
+  if(!cfg) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(syncNow, 1500);
+}
+function setSyncUI(state, msg){
+  const dot = document.getElementById("syncDot");
+  dot.className = "dot" + (state ? " "+state : "");
+  document.getElementById("syncStatus").textContent = msg;
+  document.getElementById("syncNowBtn").hidden = !cfg;
+  document.getElementById("footNote").textContent = cfg
+    ? "Stan lokalny + synchronizacja przez GitHub Gist"
+    : "Stan zapisywany lokalnie w tej przeglądarce";
+}
+
+/* ── UI ── */
+function fmtMin(m){ const h=Math.floor(m/60), r=m%60; return h? h+" godz. "+r+" min" : r+" min"; }
+
+function render(){
+  const root = document.getElementById("modules");
+  root.innerHTML = "";
+  let total=0, done=0, minLeft=0;
+
+  MODULES.forEach((mod,mi)=>{
+    let mTotal=0, mDone=0;
+    const det = document.createElement("details");
+    det.className="module";
+    if(openState[mi]) det.open = true;
+    det.addEventListener("toggle", ()=>{ openState[mi]=det.open; });
+
+    const cards = [];
+    mod.lectures.forEach(l=>{
+      total++; mTotal++;
+      const isDone = isWatched(l.id);
+      if(isDone){ done++; mDone++; } else if(l.duration){ minLeft += l.duration; }
+
+      const card = document.createElement("div");
+      card.className = "lecture" + (isDone ? " watched" : "");
+      const cb = document.createElement("input");
+      cb.type="checkbox"; cb.className="check"; cb.checked=isDone;
+      cb.setAttribute("aria-label","Oznacz jako obejrzany: "+l.title);
+      cb.addEventListener("change", ()=>{
+        watched[l.id] = {w: cb.checked, t: Date.now()};
+        persist(); render(); scheduleSync();
+      });
+      const body = document.createElement("div");
+      const dur = l.duration ? '<span class="dur">'+l.duration+' min</span>' : "";
+      const pdfBtns = (l.pdfs||[]).map(p=>'<a class="btn btn-pdf" href="'+p.url+'" target="_blank" rel="noopener">📄 '+p.label+'</a>').join("");
+      body.innerHTML =
+        '<span class="kod-badge">'+l.kod+'</span>'+
+        '<div class="title">'+l.title+'</div>'+
+        '<div class="sub">'+l.lecturer+' · '+l.date+'</div>'+
+        '<div class="links"><a class="btn btn-yt" href="'+l.yt+'" target="_blank" rel="noopener">▶ Nagranie</a>'+pdfBtns+dur+'</div>';
+      card.appendChild(cb); card.appendChild(body);
+      cards.push(card);
+    });
+
+    const sum = document.createElement("summary");
+    const full = mDone===mTotal && mTotal>0;
+    sum.innerHTML = '<span class="chev"></span><span class="mod-name">'+mod.name+'</span>'+
+      '<span class="mod-count'+(full?" full":"")+'">'+(full?"✓ ":"")+mDone+"/"+mTotal+'</span>';
+    det.appendChild(sum);
+
+    const mw = document.createElement("div");
+    mw.className="mod-wire";
+    mw.innerHTML = '<i style="width:'+(mTotal? mDone/mTotal*100 : 0)+'%"></i>';
+    det.appendChild(mw);
+
+    if(mod.note){ const n=document.createElement("div"); n.className="mod-note"; n.textContent=mod.note; det.appendChild(n); }
+    if(mod.resource){
+      const r=document.createElement("div"); r.className="mod-resource";
+      r.innerHTML = '<a class="btn btn-pdf" href="'+mod.resource.url+'" target="_blank" rel="noopener">📄 '+mod.resource.label+'</a>';
+      det.appendChild(r);
+    }
+    cards.forEach(c=>det.appendChild(c));
+    root.appendChild(det);
+  });
+
+  document.getElementById("doneCount").textContent = done;
+  document.getElementById("totalCount").textContent = total;
+  const pct = total ? done/total*100 : 0;
+  document.getElementById("wireFill").style.width = pct+"%";
+  document.getElementById("progress").classList.toggle("active", pct>0);
+  document.getElementById("timeLeft").textContent =
+    minLeft>0 ? "Pozostało do obejrzenia: ok. "+fmtMin(minLeft) : (done===total && total>0 ? "Wszystko obejrzane 🎉" : "");
+}
+
+/* ── dialog ── */
+const dlg = document.getElementById("syncDlg");
+const dlgMsg = document.getElementById("dlgMsg");
+document.getElementById("syncSetupBtn").addEventListener("click", ()=>{
+  document.getElementById("tokenInput").value = cfg ? cfg.token : "";
+  document.getElementById("gistInput").value = cfg ? cfg.gistId : "";
+  document.getElementById("dlgDisconnect").hidden = !cfg;
+  dlgMsg.textContent=""; dlgMsg.className="dlg-msg";
+  dlg.showModal();
+});
+document.getElementById("dlgClose").addEventListener("click", ()=> dlg.close());
+document.getElementById("dlgDisconnect").addEventListener("click", ()=>{
+  cfg = null; persistCfg(); dlg.close();
+  setSyncUI("","Synchronizacja wyłączona — postęp tylko na tym urządzeniu");
+});
+document.getElementById("dlgSave").addEventListener("click", async ()=>{
+  const token = document.getElementById("tokenInput").value.trim();
+  let gistId = document.getElementById("gistInput").value.trim();
+  if(!token){ dlgMsg.textContent="Podaj token."; dlgMsg.className="dlg-msg err"; return; }
+  dlgMsg.textContent="Łączę…"; dlgMsg.className="dlg-msg";
+  cfg = {token, gistId};
+  try {
+    if(!gistId){
+      gistId = await createGist();
+      cfg.gistId = gistId;
+      document.getElementById("gistInput").value = gistId;
+    }
+    persistCfg();
+    await syncNow();
+    dlgMsg.textContent="Połączono. Gist ID: "+gistId+" — zapisz go, by podłączyć kolejne urządzenia (token + ten ID).";
+    dlgMsg.className="dlg-msg ok";
+  } catch(e){
+    cfg = null; persistCfg();
+    dlgMsg.textContent = e.message + " — sprawdź token (zakres „gist") i ID.";
+    dlgMsg.className="dlg-msg err";
+  }
+});
+document.getElementById("syncNowBtn").addEventListener("click", syncNow);
+
+document.getElementById("resetBtn").addEventListener("click", ()=>{
+  if(confirm("Wyczyścić wszystkie zaznaczenia? (zmiana zsynchronizuje się na inne urządzenia)")){
+    const t = Date.now();
+    Object.keys(watched).forEach(id => watched[id] = {w:false, t});
+    persist(); render(); scheduleSync();
+  }
+});
+
+/* start */
+render();
+if(cfg){ setSyncUI("busy","Łączę z GitHub…"); syncNow(); }
+else setSyncUI("","Synchronizacja wyłączona — postęp tylko na tym urządzeniu");
+</script>
+</body>
+</html>
