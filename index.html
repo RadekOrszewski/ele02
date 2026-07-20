@@ -132,7 +132,7 @@
 
 <dialog id="syncDlg">
   <h2>Synchronizacja przez GitHub Gist</h2>
-  <p>Postęp będzie zapisywany w prywatnym (secret) giście na Twoim koncie GitHub i synchronizowany między urządzeniami. Potrzebny jest token z uprawnieniem <b>gist</b>: utwórz go na <a href="https://github.com/settings/tokens/new?scopes=gist&description=ELE.02+dashboard" target="_blank" rel="noopener">github.com/settings/tokens</a> (classic, zakres „gist"). Token zapisuje się wyłącznie w tej przeglądarce — na każdym urządzeniu wklej go raz.</p>
+  <p>Postęp będzie zapisywany w prywatnym (secret) giście na Twoim koncie GitHub i synchronizowany między urządzeniami. Potrzebny jest token z uprawnieniem <b>gist</b>: utwórz go na <a href="https://github.com/settings/tokens/new?scopes=gist&description=ELE.02+dashboard" target="_blank" rel="noopener">github.com/settings/tokens</a> (classic, zakres „gist”). Token zapisuje się wyłącznie w tej przeglądarce — na każdym urządzeniu wklej go raz.</p>
   <label for="tokenInput">GitHub token</label>
   <input id="tokenInput" type="password" autocomplete="off" placeholder="ghp_...">
   <label for="gistInput">Gist ID <span style="text-transform:none">(zostaw puste przy pierwszej konfiguracji — utworzę gist automatycznie)</span></label>
@@ -1244,7 +1244,7 @@ document.getElementById("dlgSave").addEventListener("click", async ()=>{
     dlgMsg.className="dlg-msg ok";
   } catch(e){
     cfg = null; persistCfg();
-    dlgMsg.textContent = e.message + " — sprawdź token (zakres „gist") i ID.";
+    dlgMsg.textContent = e.message + " — sprawdź token (zakres „gist”) i ID.";
     dlgMsg.className="dlg-msg err";
   }
 });
